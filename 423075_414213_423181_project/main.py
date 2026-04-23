@@ -58,8 +58,7 @@ def main(args):
         pass
 
     elif args.method == "linear_regression":
-        ### WRITE YOUR CODE HERE
-        pass
+        method_obj = LinearRegression()
 
     else:
         raise ValueError(f"Unknown method: {args.method}")
