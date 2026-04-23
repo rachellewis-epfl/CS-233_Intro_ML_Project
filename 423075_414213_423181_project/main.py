@@ -38,10 +38,38 @@ def main(args):
 
     # Make a validation set (it can overwrite xtest, ytest)
     if not args.test:
-        ### WRITE YOUR CODE HERE
+        n_train = train_features.shape[0]
+        indices = np.random.permutation(n_train)
+
+        val_size = int(args.val_ratio * n_train)
+        val_idx = indices[:val_size]
+        train_idx = indices[val_size:]
+
+        # Create Splits
+        val_features = train_features[val_idx]
+        new_train_features = train_features[train_idx]
+
+        val_labels_reg = train_labels_reg[val_idx]
+        new_train_labels_reg = train_labels_reg[train_idx]
+
+        val_labels_classif = train_labels_classif[val_idx]
+        new_train_labels_classif = train_labels_classif[train_idx]
+
+        # Set train/test to new train/validation
+        train_features = new_train_features
+        train_labels_reg = new_train_labels_reg
+        train_labels_classif = new_train_labels_classif
+        test_features = val_features
+        test_labels_reg = val_labels_reg
+        test_labels_classif = val_labels_classif
         pass
 
-    ### WRITE YOUR CODE HERE to do any other data processing
+    #normalize data to prevent over-influence of large features
+    mean = train_features.mean(axis=0, keepdims=True)
+    std = train_features.std(axis=0, keepdims=True) + 1e-8
+
+    train_features = (train_features - mean) / std
+    test_features = (test_features - mean) / std
     means = train_features.mean(axis=0, keepdims=True)
     
     stds  = train_features.std(axis=0, keepdims=True)
@@ -62,7 +90,7 @@ def main(args):
         pass
 
     elif args.method == "logistic_regression":
-        ### WRITE YOUR CODE HERE
+        method_obj = LogisticRegression()
         pass
 
     elif args.method == "linear_regression":
@@ -72,6 +100,8 @@ def main(args):
         raise ValueError(f"Unknown method: {args.method}")
 
     ## 4. Train and evaluate the method
+
+    eval_name = "Test" if args.test else "Validation"
 
     if args.task == "classification":
         assert args.method != "linear_regression", f"You should use linear regression as a regression method"
@@ -88,10 +118,11 @@ def main(args):
 
         acc = accuracy_fn(preds, test_labels_classif)
         macrof1 = macrof1_fn(preds, test_labels_classif)
-        print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+        print(f"{eval_name} set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
     elif args.task == "regression":
         assert args.method != "logistic_regression", f"You should use logistic regression as a classification method"
+        
         # Fit the method on training data
         preds_train = method_obj.fit(train_features, train_labels_reg)
 
@@ -103,7 +134,7 @@ def main(args):
         print(f"\nTrain set: MSE = {train_mse:.6f}")
 
         test_mse = mse_fn(preds, test_labels_reg)
-        print(f"Test set:  MSE = {test_mse:.6f}")
+        print(f"{eval_name} set:  MSE = {test_mse:.6f}")
 
     else:
         raise ValueError(f"Unknown task: {args.task}")
@@ -156,6 +187,12 @@ if __name__ == "__main__":
              "otherwise use a validation set",
     )
     # Feel free to add more arguments here if you need!
+    parser.add_argument(
+        "--val_ratio",
+        type=float,
+        default=0.2,
+        help="fraction of training data to use for validation",
+    )
 
     args = parser.parse_args()
     main(args)
