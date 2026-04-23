@@ -24,9 +24,10 @@ class LogisticRegression(object):
     Multi-class logistic regression classifier.
     """
 
-    def __init__(self, lr, max_iters=500):
+    def __init__(self, lr=0.0001, max_iters=5000, tol=1e-5):
         self.lr = lr
         self.max_iters = max_iters
+        self.tol = tol
         self.W = None           # weights
         self.C = None           # num of classes
 
@@ -45,6 +46,7 @@ class LogisticRegression(object):
         probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
         return probs
     
+    
     # from Lec 4 "Multi-class logistic regression"
     def fit(self, training_data, training_labels):
         """
@@ -56,8 +58,9 @@ class LogisticRegression(object):
         Returns:
             pred_labels (np.array): predicted labels of shape (N,)
         """
-        
-        N, D = training_data.shape
+        #add bias (account for w_0)
+        X = np.hstack([np.ones((training_data.shape[0], 1)), training_data])
+        N, D = X.shape
         self.C = get_n_classes(training_labels)
 
         # one-hot labels, shape (N, C)
@@ -70,15 +73,27 @@ class LogisticRegression(object):
             # Gradient descent process: Lec 4 slide 49
 
             # X*W aka (w_k^T * x) in lecture softmax func
-            scores = m_mult(training_data, self.W)
+            scores = m_mult(X, self.W)
             Y_hat = self.softmax(scores)
+
+            if (i % 50 == 0):
+                eps = 1e-12
+                loss = -np.sum(Y * np.log(Y_hat + eps)) / N
+                print(f'loss: {loss}')
 
             # gradient from lec 4 slide 51
             # ∇_W R(W) = sum_i x_i (y_hat_i - y_i)^T
             # vectorized: X^T (Y_hat - Y)
-            grad = m_mult( m_T(training_data), (Y_hat - Y) )
+            grad = m_mult( m_T(X), (Y_hat - Y) )
+            # normalize so that the gradient doesn't scale w bigger data sets
+            grad = grad / N 
 
+            W_prev = self.W.copy()
             self.W = self.W - self.lr * grad
+
+            fro_norm = np.linalg.norm(W_prev - self.W, ord='fro')
+            if fro_norm < self.tol:
+                break
 
         # return predictions on training data
         pred_labels = self.predict(training_data)
@@ -93,8 +108,11 @@ class LogisticRegression(object):
         Returns:
             pred_labels (np.array): labels of shape (N,)
         """
+        #add bias (account for w_0)
+        X = np.hstack([np.ones((test_data.shape[0], 1)), test_data])
+
         # class scores
-        scores = m_mult(test_data, self.W)
+        scores = m_mult(X, self.W)
 
         # probabilities
         Y_hat = self.softmax(scores)
