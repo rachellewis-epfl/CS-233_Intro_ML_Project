@@ -12,6 +12,9 @@ class LinearRegression(object):
         and set its arguments.
         """
 
+        # there should be no weight attribute until fit() computes it
+        self.w = None
+
     def fit(self, training_data, training_labels):
         """
         Trains the model, returns predicted labels for training data.
@@ -25,11 +28,18 @@ class LinearRegression(object):
         Returns:
             pred_labels (np.array): target of shape (N,)
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
+
+        # add bias term (a column of 1s)
+        X = np.concatenate([np.ones((training_data.shape[0], 1)), training_data], axis=1)
+        y = training_labels
+
+        # closed-form solution
+        # @ means matrix multiplication
+        self.w = np.linalg.pinv(X.T @ X) @ X.T @ y
+
+        # X times closed form solution is the predicted labels 
+        pred_labels = X @ self.w
+
         return pred_labels
 
     def predict(self, test_data):
@@ -41,9 +51,11 @@ class LinearRegression(object):
         Returns:
             pred_labels (np.array): labels of shape (N,)
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
+
+        # add bias term
+        X = np.concatenate([np.ones((test_data.shape[0], 1)), test_data], axis=1)
+        
+        # simply use self.w weight to predict labels
+        pred_labels = X @ self.w
+
         return pred_labels
