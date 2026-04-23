@@ -64,7 +64,12 @@ def main(args):
         test_labels_classif = val_labels_classif
         pass
 
-    ### WRITE YOUR CODE HERE to do any other data processing
+    #normalize data to prevent over-influence of large features
+    mean = train_features.mean(axis=0, keepdims=True)
+    std = train_features.std(axis=0, keepdims=True) + 1e-8
+
+    train_features = (train_features - mean) / std
+    test_features = (test_features - mean) / std
 
     ## 3. Initialize the method you want to use.
 
