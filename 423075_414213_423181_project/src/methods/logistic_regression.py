@@ -4,6 +4,10 @@ from ..utils import get_n_classes, label_to_onehot, onehot_to_label
 
 # filled in by Rachel Lewis
 
+# disclaimer: got optimization of normalizing the gradient by N 
+# from ChatGPT in efforts to debug low accuracy, turned out to be data
+# processing issue
+
 def m_mult(m1, m2):
     # matrix multiplication
     return np.dot(m1, m2)
@@ -24,7 +28,7 @@ class LogisticRegression(object):
     Multi-class logistic regression classifier.
     """
 
-    def __init__(self, lr=0.0001, max_iters=5000, tol=1e-5):
+    def __init__(self, lr=0.1, max_iters=1000, tol=1e-5):
         self.lr = lr
         self.max_iters = max_iters
         self.tol = tol
@@ -76,6 +80,7 @@ class LogisticRegression(object):
             scores = m_mult(X, self.W)
             Y_hat = self.softmax(scores)
 
+            # loss calculation for debug
             if (i % 50 == 0):
                 eps = 1e-12
                 loss = -np.sum(Y * np.log(Y_hat + eps)) / N
