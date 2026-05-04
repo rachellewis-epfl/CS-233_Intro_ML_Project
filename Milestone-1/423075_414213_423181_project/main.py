@@ -70,7 +70,14 @@ def main(args):
 
     train_features = (train_features - mean) / std
     test_features = (test_features - mean) / std
-
+    means = train_features.mean(axis=0, keepdims=True)
+    
+    stds  = train_features.std(axis=0, keepdims=True)
+    stds[stds == 0] = 1.0
+    
+    train_features = normalize_fn(train_features, means, stds)
+    test_features  = normalize_fn(test_features,  means, stds)
+    
     ## 3. Initialize the method you want to use.
 
     # Follow the "DummyClassifier" example for your methods
@@ -79,6 +86,7 @@ def main(args):
 
     elif args.method == "knn":
         ### WRITE YOUR CODE HERE
+        method_obj = KNN(k=args.K, task_kind=args.task)
         pass
 
     elif args.method == "logistic_regression":
