@@ -9,17 +9,17 @@ class Sigmoid:
     @staticmethod
     def gradient(z):
         # easily found by taking derivative of forward function wrt z
-        return (np.exp(-z)) / ( (1 + np.exp(-z))^2 )
+        return (np.exp(-z)) / ( (1 + np.exp(-z))**2 )
 
 class ReLU:
     @staticmethod
     def forward(z):
         # as defined in Lec 9 slide 24
-        return np.max(z, 0)
+        return np.maximum(z, 0)
 
     @staticmethod
     def gradient(z):
-        return (int)(z > 0)  
+        return (z > 0).astype(float)
         # basically, if z > 0 , that means on the forward ReLU passed the value
         # aka the gradient is 1
         # but if z == 0, that means ReLu didn't activate on the forward, 
