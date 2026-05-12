@@ -8,7 +8,7 @@ class MSE:
         :param y_pred: (array) Prediction vector
         :return: (flt)
         """
-        # as define in Lec 2 slide 42
+        # as defined in Lec 2 slide 42
         return np.mean((y_pred - y_true) ** 2)
 
     @staticmethod

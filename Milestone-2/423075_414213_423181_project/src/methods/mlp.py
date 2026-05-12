@@ -68,7 +68,7 @@ class MLP:
             # Lect 9 slide 41: z_l = f (W_l * z_l-1) (where l is current layer)
             # and ( W_l * z_l-1 ) is the "activation" of the layer,
             # so z[i] = f ( a[i] )
-            
+
             a[i] = z[i - 1] @ self.weights[i] + self.biases[i]
             z[i] = self.activations[i - 1].forward(a[i])
 
@@ -80,14 +80,15 @@ class MLP:
         :param x: (array) Containing parameters
         :return: (array) A 2D array of shape (n_cases, n_classes).
         """
+        
+        z, _ = self.feed_forward(x)
+        return z[self.n_layers]
 
-        ### WRITE YOUR CODE HERE
-
-
+    # Lect 9 slide 52 back prop algorithm
     def back_prop(self, z, a, y_true, loss):
         """
         The input dicts keys represent the layers of the net.
-        a = { 0: x,
+        ex = { 0: x,
               1: f(w1(x) + b1)
               2: f(w2(a2) + b2)
               }
@@ -95,10 +96,39 @@ class MLP:
         :param z: (dict) f(a)
         :param y_true: (array) One hot encoded truth vector.
         :param loss: Loss class with a static .gradient(y_true, y_pred) method.
-        :return:
+
+        :return: tuple (dw, delta)
+                 dw[i] = gradient of weights at layer i
+                 delta[i] = error signal at layer i
+                
         """
 
-        ### WRITE YOUR CODE HERE
+        batch_size = y_true.shape[0]
+        dw = {}
+        delta = {}
+
+        L = self.n_layers
+        y_pred = z[L]
+
+        # Get output layer delta
+        # Lec 9 slide 48: delta_k_l = d_l_i / d_a_k_l
+        # aka delta_i = derivative of loss func "l" wrt a certain activation "a_i"
+
+        # f( a[L] ) = y_pred where f is activation func
+        # so delta[L] = deriv(loss wrt y_pred) * deriv(y_pred wrt a[L])
+        delta[L] = loss.gradient(y_true, y_pred) * self.activations[L - 1].gradient(a[L])
+
+
+        for i in range(L, 0, -1):
+            # average over gradients of all samples
+            dw[i] = (z[i - 1].T @ delta[i]) / batch_size
+
+            if i > 1:
+                delta[i - 1] = (
+                    delta[i] @ self.weights[i].T
+                ) * self.activations[i - 2].gradient(a[i - 1])
+
+        return dw, delta
 
 
     def update_w_b(self, index, dw, delta):
@@ -109,8 +139,15 @@ class MLP:
         :param delta: (array) Delta error.
         """
 
-        ### WRITE YOUR CODE HERE
+        self.weights[index] -= self.learning_rate * dw
+        self.biases[index] -= self.learning_rate * np.mean(
+            delta,
+            axis=0,
+            keepdims=True
+        )
 
+
+    # train using mini-batch SGD (Lec 9 slide 60)
     def fit(self, x, y_true, loss, epochs, batch_size, learning_rate=1e-3):
         """
         :param x: (array) Containing parameters
@@ -121,4 +158,34 @@ class MLP:
         :param learning_rate: (flt)
         """
 
-        ### WRITE YOUR CODE HERE
+        self.learning_rate = learning_rate
+        n_cases = x.shape[0]
+        history = []
+
+        for epoch in range(epochs):
+            indices = np.arange(n_cases)
+            np.random.shuffle(indices)
+
+            x_shuffled = x[indices]
+            y_shuffled = y_true[indices]
+
+            for start in range(0, n_cases, batch_size):
+                end = start + batch_size
+
+                x_batch = x_shuffled[start:end]
+                y_batch = y_shuffled[start:end]
+
+                z, a = self.feed_forward(x_batch)
+                dw, delta = self.back_prop(z, a, y_batch, loss)
+
+                for i in range(1, self.n_layers + 1):
+                    self.update_w_b(i, dw[i], delta[i])
+
+            y_pred = self.predict(x)
+            epoch_loss = loss.loss(y_true, y_pred)
+            history.append(epoch_loss)
+
+            if epoch % 100 == 0 or epoch == epochs - 1:
+                print(f"Epoch {epoch:4d} | Loss: {epoch_loss:.6f}")
+
+        return history
