@@ -31,4 +31,4 @@ class CrossEntropy:
     def gradient(y_true, y_pred):
         # derivative of the above function wrt y_pred
         # not a sum because we are making gradient vector
-        return - y_true / y_pred
+        return -( y_true / y_pred )
