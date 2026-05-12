@@ -120,6 +120,7 @@ class MLP:
 
 
         for i in range(L, 0, -1):
+            # Lec 9 slide 60
             # average weights across mini-batch, for more efficient updates
             dw[i] = (z[i - 1].T @ delta[i]) / batch_size
 
@@ -139,7 +140,10 @@ class MLP:
         :param delta: (array) Delta error.
         """
 
+        # Lec 9 slide 53/60
         self.weights[index] -= self.learning_rate * dw
+
+        # average the deltas for each sample in the batch
         self.biases[index] -= self.learning_rate * np.mean(
             delta,
             axis=0,
@@ -156,11 +160,12 @@ class MLP:
         :param epochs: (int) Number of epochs.
         :param batch_size: (int)
         :param learning_rate: (flt)
+
+
         """
 
         self.learning_rate = learning_rate
         n_cases = x.shape[0]
-        history = []
 
         for epoch in range(epochs):
 
@@ -185,9 +190,7 @@ class MLP:
 
             y_pred = self.predict(x)
             epoch_loss = loss.loss(y_true, y_pred)
-            history.append(epoch_loss)
 
             if epoch % 100 == 0 or epoch == epochs - 1:
                 print(f"Epoch {epoch:4d} | Loss: {epoch_loss:.6f}")
 
-        return history
