@@ -120,7 +120,7 @@ class MLP:
 
 
         for i in range(L, 0, -1):
-            # average over gradients of all samples
+            # average weights across mini-batch, for more efficient updates
             dw[i] = (z[i - 1].T @ delta[i]) / batch_size
 
             if i > 1:
@@ -163,12 +163,14 @@ class MLP:
         history = []
 
         for epoch in range(epochs):
+
+            # shuffle dataset to prevent influence of any patterns in our batches
             indices = np.arange(n_cases)
             np.random.shuffle(indices)
-
             x_shuffled = x[indices]
             y_shuffled = y_true[indices]
 
+            # process each mini batch
             for start in range(0, n_cases, batch_size):
                 end = start + batch_size
 
