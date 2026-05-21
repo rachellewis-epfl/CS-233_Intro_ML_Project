@@ -151,7 +151,7 @@ def main(args):
             n_classes = get_n_classes(train_labels_classif)
             output_dim = n_classes
 
-            hidden_nodes = 64
+            hidden_nodes = 32
             if HYPERPARAMETER_SEARCH_MODE:
                 hidden_nodes = best_hidden_size
 
