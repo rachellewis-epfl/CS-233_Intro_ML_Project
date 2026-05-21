@@ -11,6 +11,8 @@ import os
 
 np.random.seed(100)
 
+HYPERPARAMETER_SEARCH_MODE = True # Set macro to run hyperparameter search (very slow!)
+
 
 def main(args):
     """
@@ -79,6 +81,58 @@ def main(args):
     train_features = normalize_fn(train_features, means, stds)
     test_features  = normalize_fn(test_features,  means, stds)
 
+    # Hyperparameter search for MLP
+    learning_rates = [0.1, 0.01, 0.001]
+    best_lr = None
+
+    hidden_sizes = [32, 64, 128]
+    best_hidden_size = None
+
+    batch_sizes = [16, 32, 64]
+    best_batch_size = None
+
+    epochs = [25, 50, 100]
+    best_epochs = None
+
+    best_val_acc = -1
+
+    if HYPERPARAMETER_SEARCH_MODE:
+        for lr in learning_rates:
+            for hidden_size in hidden_sizes:
+                for batch_size in batch_sizes:
+                    for epoch in epochs:
+                        mlp = MLP(
+                            dimensions=[train_features.shape[1], hidden_size, get_n_classes(train_labels_classif)],
+                            activations=[ReLU, Sigmoid]
+                        )
+
+                        y_train_one_hot = label_to_onehot(train_labels_classif, get_n_classes(train_labels_classif))
+
+                        mlp.fit(
+                            train_features,
+                            y_train_one_hot,
+                            loss=MSE,
+                            epochs=epoch,
+                            batch_size=batch_size,
+                            learning_rate=lr
+                        )
+
+                        y_val_pred_scores = mlp.predict(test_features)
+                        y_val_pred = onehot_to_label(y_val_pred_scores)
+
+                        val_acc = accuracy_fn(y_val_pred, test_labels_classif)
+
+                        if val_acc > best_val_acc:
+                            best_val_acc = val_acc
+                            best_lr = lr
+                            best_hidden_size = hidden_size
+                            best_batch_size = batch_size
+                            best_epochs = epoch
+
+        print(f"Best learning rate: {best_lr}")
+        print(f"Best hidden size: {best_hidden_size}")
+        print(f"Best batch size: {best_batch_size}")
+        print(f"Best epochs: {best_epochs}")
 
     ## 3. Initialize the method you want to use.
 
@@ -97,8 +151,12 @@ def main(args):
             n_classes = get_n_classes(train_labels_classif)
             output_dim = n_classes
 
+            hidden_nodes = 64
+            if HYPERPARAMETER_SEARCH_MODE:
+                hidden_nodes = best_hidden_size
+
             method_obj = MLP(
-                dimensions=[input_dim, 64, output_dim],
+                dimensions=[input_dim, hidden_nodes, output_dim],
                 activations=[ReLU, Sigmoid]
             )
 
@@ -115,24 +173,33 @@ def main(args):
 
             y_train_one_hot = label_to_onehot(train_labels_classif, n_classes)
 
+            mlp_epochs = args.max_iters
+            mlp_batch_size = args.batch_size
+            mlp_lr = args.lr
+
+            if HYPERPARAMETER_SEARCH_MODE:
+                mlp_epochs = best_epochs
+                mlp_batch_size = best_batch_size
+                mlp_lr = best_lr
+
             method_obj.fit(
                 train_features,
                 y_train_one_hot,
                 loss=MSE,
-                epochs=args.max_iters,
-                batch_size=args.batch_size,
-                learning_rate=args.lr
+                epochs=mlp_epochs,
+                batch_size=mlp_batch_size,
+                learning_rate=mlp_lr
             )
 
 
             y_pred_scores = method_obj.predict(test_features)
             y_pred = onehot_to_label(y_pred_scores)
 
-        acc = accuracy_fn(y_pred, test_labels_classif)
-        macro_f1 = macrof1_fn(y_pred, test_labels_classif)
+            acc = accuracy_fn(y_pred, test_labels_classif)
+            macro_f1 = macrof1_fn(y_pred, test_labels_classif)
 
-        print(f"Accuracy: {acc:.4f}")
-        print(f"Macro F1:  {macro_f1:.4f}")
+            print(f"Accuracy: {acc:.4f}")
+            print(f"Macro F1:  {macro_f1:.4f}")
         pass
 
     elif args.task == "regression":
