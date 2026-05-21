@@ -82,16 +82,16 @@ def main(args):
     test_features  = normalize_fn(test_features,  means, stds)
 
     # Hyperparameter search for MLP
-    learning_rates = [0.1, 0.01, 0.001]
+    learning_rates = [0.2, 0.1, 0.05] # previously tested: 0.01, 0.001
     best_lr = None
 
-    hidden_sizes = [32, 64, 128]
+    hidden_sizes = [24, 32, 48] # previously tested: 16, 64, 128
     best_hidden_size = None
 
-    batch_sizes = [16, 32, 64]
+    batch_sizes = [24, 32, 48] # previously tested: 16, 64
     best_batch_size = None
 
-    epochs = [25, 50, 100]
+    epochs = [32, 50, 64] # previously tested: 25, 100
     best_epochs = None
 
     best_val_acc = -1
