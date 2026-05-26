@@ -11,8 +11,6 @@ import os
 
 np.random.seed(100)
 
-HYPERPARAMETER_SEARCH_MODE = True # Set macro to run hyperparameter search (very slow!)
-
 
 def main(args):
     """
@@ -27,6 +25,8 @@ def main(args):
     dataset_path = args.data_path
     if not os.path.exists(dataset_path):
         raise FileNotFoundError(f"Dataset not found at {dataset_path}")
+    
+    HYPERPARAMETER_SEARCH_MODE = args.param_search # Set macro to run hyperparameter search (very slow!)
 
     ## 1. We first load the data.
 
@@ -160,6 +160,14 @@ def main(args):
                 activations=[ReLU, Sigmoid]
             )
 
+        if args.task == "regression":
+            hidden_nodes = 32
+            
+            method_obj = MLP(
+                dimensions=[input_dim, hidden_nodes, 1],
+                activations=[ReLU, Sigmoid]  # or better: [ReLU, Linear]
+            )
+
         pass
     else:
         raise ValueError(f"Unknown method: {args.method}")
@@ -266,6 +274,13 @@ if __name__ == "__main__":
         type=int,
         default=32,
         help="batch size for MLP training",
+    )
+
+    parser.add_argument(
+        "--param_search",
+        type=bool,
+        default=False,
+        help="search for optimal parameters (very slow)",
     )
 
     args = parser.parse_args()
