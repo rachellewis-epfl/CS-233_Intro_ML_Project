@@ -94,40 +94,73 @@ def main(args):
     epochs = [32, 50, 64] # previously tested: 25, 100
     best_epochs = None
 
-    best_val_acc = -1
-
     if HYPERPARAMETER_SEARCH_MODE:
         for lr in learning_rates:
             for hidden_size in hidden_sizes:
                 for batch_size in batch_sizes:
                     for epoch in epochs:
-                        mlp = MLP(
-                            dimensions=[train_features.shape[1], hidden_size, get_n_classes(train_labels_classif)],
-                            activations=[ReLU, Sigmoid]
-                        )
+                        if args.method == "mlp":
+                            input_dim = train_features.shape[1]
 
-                        y_train_one_hot = label_to_onehot(train_labels_classif, get_n_classes(train_labels_classif))
+                            if args.task == "classification":
+                                best_val_acc = -1
 
-                        mlp.fit(
-                            train_features,
-                            y_train_one_hot,
-                            loss=MSE,
-                            epochs=epoch,
-                            batch_size=batch_size,
-                            learning_rate=lr
-                        )
+                                mlp = MLP(
+                                    dimensions=[input_dim, hidden_size, get_n_classes(train_labels_classif)],
+                                    activations=[ReLU, Sigmoid]
+                                )
 
-                        y_val_pred_scores = mlp.predict(test_features)
-                        y_val_pred = onehot_to_label(y_val_pred_scores)
+                                y_train_one_hot = label_to_onehot(train_labels_classif, get_n_classes(train_labels_classif))
 
-                        val_acc = accuracy_fn(y_val_pred, test_labels_classif)
+                                mlp.fit(
+                                    train_features,
+                                    y_train_one_hot,
+                                    loss=MSE,
+                                    epochs=epoch,
+                                    batch_size=batch_size,
+                                    learning_rate=lr
+                                )
 
-                        if val_acc > best_val_acc:
-                            best_val_acc = val_acc
-                            best_lr = lr
-                            best_hidden_size = hidden_size
-                            best_batch_size = batch_size
-                            best_epochs = epoch
+                                y_val_pred_scores = mlp.predict(test_features)
+                                y_val_pred = onehot_to_label(y_val_pred_scores)
+
+                                val_acc = accuracy_fn(y_val_pred, test_labels_classif)
+
+                                if val_acc > best_val_acc:
+                                    best_val_acc = val_acc
+                                    best_lr = lr
+                                    best_hidden_size = hidden_size
+                                    best_batch_size = batch_size
+                                    best_epochs = epoch
+
+                            if args.task == "regression":
+                                best_val_mse = None
+                                mlp = MLP(
+                                    dimensions=[input_dim, hidden_size, 1],
+                                    activations=[ReLU, Sigmoid]  # or better: [ReLU, Linear]
+                                )
+
+                                y_train_reg = train_labels_reg.reshape(-1, 1)
+                                y_val_reg = test_labels_reg.reshape(-1, 1)
+
+                                mlp.fit(
+                                    train_features,
+                                    y_train_reg,
+                                    loss=MSE,
+                                    epochs=epoch,
+                                    batch_size=batch_size,
+                                    learning_rate=lr
+                                )
+
+                                y_val_pred = mlp.predict(test_features)
+                                val_mse = mse_fn(y_val_pred, y_val_reg)
+
+                                if best_val_mse == None or val_mse < best_val_mse:
+                                    best_val_mse = val_mse
+                                    best_lr = lr
+                                    best_hidden_size = hidden_size
+                                    best_batch_size = batch_size
+                                    best_epochs = epoch
 
         print(f"Best learning rate: {best_lr}")
         print(f"Best hidden size: {best_hidden_size}")
@@ -146,12 +179,12 @@ def main(args):
 
     elif args.method == "mlp":
         input_dim = train_features.shape[1]
+        hidden_nodes = args.hidden_nodes
 
         if args.task == "classification":
             n_classes = get_n_classes(train_labels_classif)
             output_dim = n_classes
 
-            hidden_nodes = 32
             if HYPERPARAMETER_SEARCH_MODE:
                 hidden_nodes = best_hidden_size
 
@@ -161,7 +194,6 @@ def main(args):
             )
 
         if args.task == "regression":
-            hidden_nodes = 32
             
             method_obj = MLP(
                 dimensions=[input_dim, hidden_nodes, 1],
@@ -211,9 +243,27 @@ def main(args):
         pass
 
     elif args.task == "regression":
-        assert args.method != "kmeans", f"You should use kmeans as a classification method"
+        assert args.method != "kmeans", "You should use kmeans as a classification method"
 
-        ### WRITE YOUR CODE HERE
+        if args.method == "mlp":
+            y_train_reg = train_labels_reg.reshape(-1, 1)
+            y_test_reg = test_labels_reg.reshape(-1, 1)
+
+            method_obj.fit(
+
+                train_features,
+                y_train_reg,
+                loss=MSE,
+                epochs=args.max_iters,
+                batch_size=args.batch_size,
+                learning_rate=args.lr
+            )
+
+            y_pred = method_obj.predict(test_features)
+
+            mse = mse_fn(y_pred, y_test_reg)
+            print(f"MSE: {mse:.4f}")
+
 
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
 
@@ -281,6 +331,13 @@ if __name__ == "__main__":
         type=bool,
         default=False,
         help="search for optimal parameters (very slow)",
+    )
+    parser.add_argument(
+        "--hidden_nodes",
+        type=int,
+        default=32,
+
+        help="number of hidden nodes"
     )
 
     args = parser.parse_args()
