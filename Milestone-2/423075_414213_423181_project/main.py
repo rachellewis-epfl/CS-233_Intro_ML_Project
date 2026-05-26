@@ -4,7 +4,7 @@ import numpy as np
 from src.methods.dummy_methods import DummyClassifier
 from src.methods.mlp import MLP
 from src.losses import MSE
-from src.activations import Sigmoid, ReLU
+from src.activations import Sigmoid, ReLU, Linear
 from src.methods.kmeans import KMeans
 from src.utils import normalize_fn, label_to_onehot, onehot_to_label, get_n_classes, append_bias_term, accuracy_fn, macrof1_fn, mse_fn
 import os
@@ -137,7 +137,7 @@ def main(args):
                                 best_val_mse = None
                                 mlp = MLP(
                                     dimensions=[input_dim, hidden_size, 1],
-                                    activations=[ReLU, Sigmoid]  # or better: [ReLU, Linear]
+                                    activations=[ReLU, Linear]  
                                 )
 
                                 y_train_reg = train_labels_reg.reshape(-1, 1)
@@ -197,7 +197,7 @@ def main(args):
             
             method_obj = MLP(
                 dimensions=[input_dim, hidden_nodes, 1],
-                activations=[ReLU, Sigmoid]  # or better: [ReLU, Linear]
+                activations=[ReLU, Linear] 
             )
 
         pass

@@ -24,3 +24,12 @@ class ReLU:
         # aka the gradient is 1
         # but if z == 0, that means ReLu didn't activate on the forward, 
         # so gradient 0
+
+class Linear:
+    @staticmethod
+    def forward(x):
+        return x
+
+    @staticmethod
+    def gradient(x):
+        return np.ones_like(x)
