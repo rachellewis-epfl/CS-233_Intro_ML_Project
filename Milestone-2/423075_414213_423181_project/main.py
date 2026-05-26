@@ -249,14 +249,24 @@ def main(args):
             y_train_reg = train_labels_reg.reshape(-1, 1)
             y_test_reg = test_labels_reg.reshape(-1, 1)
 
+            mlp_epochs = args.max_iters
+            mlp_batch_size = args.batch_size
+            mlp_lr = args.lr
+
+            if HYPERPARAMETER_SEARCH_MODE:
+                mlp_epochs = best_epochs
+                mlp_batch_size = best_batch_size
+                mlp_lr = best_lr
+
             method_obj.fit(
 
                 train_features,
                 y_train_reg,
                 loss=MSE,
-                epochs=args.max_iters,
-                batch_size=args.batch_size,
-                learning_rate=args.lr
+                epochs=mlp_epochs,
+                batch_size=mlp_batch_size,
+                learning_rate=mlp_lr
+
             )
 
             y_pred = method_obj.predict(test_features)
@@ -336,7 +346,6 @@ if __name__ == "__main__":
         "--hidden_nodes",
         type=int,
         default=32,
-
         help="number of hidden nodes"
     )
 
