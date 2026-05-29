@@ -174,8 +174,7 @@ def main(args):
         method_obj = DummyClassifier(arg1=1, arg2=2)
 
     elif args.method == "kmeans":
-        ### WRITE YOUR CODE HERE
-        pass
+        method_obj = KMeans(K=args.K, max_iters=args.max_iters)
 
     elif args.method == "mlp":
         input_dim = train_features.shape[1]
@@ -240,7 +239,16 @@ def main(args):
 
             print(f"Accuracy: {acc:.4f}")
             print(f"Macro F1:  {macro_f1:.4f}")
-        pass
+
+        elif args.method == "kmeans":
+            method_obj.fit(train_features, train_labels_classif)
+            y_pred = method_obj.predict(test_features)
+
+            acc = accuracy_fn(y_pred, test_labels_classif)
+            macro_f1 = macrof1_fn(y_pred, test_labels_classif)
+
+            print(f"Accuracy: {acc:.4f}")
+            print(f"Macro F1:  {macro_f1:.4f}")
 
     elif args.task == "regression":
         assert args.method != "kmeans", "You should use kmeans as a classification method"
